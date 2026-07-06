@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShellDeck — Cross-platform shell bootstrap</title>
+  <meta name="description" content="ShellDeck prepares fresh Windows, Linux and macOS workstations with PowerShell, Bash, Zsh, SSH workflows, CLI tools and an infra dashboard.">
+  <meta property="og:title" content="ShellDeck — Cross-platform shell bootstrap">
+  <meta property="og:description" content="Turn a fresh VM or workstation into a ready-to-use terminal environment in minutes.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/shelldeck-logo.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: rgba(255, 255, 255, 0.07);
+      --panel-strong: rgba(255, 255, 255, 0.11);
+      --text: #eef6ff;
+      --muted: #a8b8ca;
+      --line: rgba(255, 255, 255, 0.14);
+      --accent: #7dd3fc;
+      --accent-2: #a78bfa;
+      --good: #86efac;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(125, 211, 252, 0.22), transparent 34rem),
+        radial-gradient(circle at 80% 10%, rgba(167, 139, 250, 0.22), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    .container { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(7, 17, 31, 0.72);
+      border-bottom: 1px solid var(--line);
+    }
+
+    nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: -0.03em; }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #07111f;
+      font-weight: 900;
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 0.95rem; }
+    .nav-links a:hover { color: var(--text); }
+
+    .hero { padding: 88px 0 56px; }
+    .hero-grid { display: grid; grid-template-columns: 1.03fr 0.97fr; gap: 42px; align-items: center; }
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--accent);
+      background: rgba(125, 211, 252, 0.09);
+      border: 1px solid rgba(125, 211, 252, 0.24);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    h1 {
+      margin: 20px 0 18px;
+      font-size: clamp(2.8rem, 7vw, 5.8rem);
+      line-height: 0.92;
+      letter-spacing: -0.08em;
+    }
+
+    .lead { font-size: clamp(1.08rem, 2vw, 1.28rem); color: var(--muted); max-width: 680px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 14px;
+      padding: 13px 18px;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .button.primary { color: #07111f; background: linear-gradient(135deg, var(--accent), var(--good)); border: 0; }
+    .button:hover { transform: translateY(-1px); }
+
+    .terminal-card {
+      border: 1px solid var(--line);
+      background: rgba(3, 7, 18, 0.78);
+      box-shadow: var(--shadow);
+      border-radius: 22px;
+      overflow: hidden;
+    }
+    .terminal-top { display: flex; gap: 8px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+    .dot { width: 12px; height: 12px; border-radius: 999px; background: #64748b; }
+    .terminal-body { padding: 24px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; color: #dbeafe; font-size: 0.94rem; overflow: auto; }
+    .terminal-body .muted { color: #8aa3bd; }
+    .terminal-body .ok { color: var(--good); }
+    .terminal-body .cmd { color: var(--accent); }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
+    .stat { padding: 16px; border: 1px solid var(--line); background: var(--panel); border-radius: 18px; }
+    .stat strong { display: block; font-size: 1.6rem; line-height: 1; }
+    .stat span { color: var(--muted); font-size: 0.92rem; }
+
+    section { padding: 64px 0; }
+    .section-title { margin: 0 0 12px; font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: -0.055em; line-height: 1; }
+    .section-subtitle { color: var(--muted); max-width: 760px; margin: 0 0 32px; font-size: 1.08rem; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 22px;
+      padding: 22px;
+      min-height: 180px;
+    }
+    .card h3 { margin: 0 0 10px; letter-spacing: -0.03em; font-size: 1.18rem; }
+    .card p { margin: 0; color: var(--muted); }
+
+    .screenshots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .shot { border: 1px solid var(--line); background: var(--panel); border-radius: 22px; overflow: hidden; box-shadow: var(--shadow); }
+    .shot img { width: 100%; height: 220px; object-fit: cover; background: #020617; }
+    .shot figcaption { padding: 14px 16px; color: var(--muted); font-size: 0.95rem; }
+
+    .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
+    .code-card { border: 1px solid var(--line); background: rgba(3, 7, 18, 0.82); border-radius: 20px; overflow: hidden; }
+    .code-card h3 { margin: 0; padding: 16px 18px; border-bottom: 1px solid var(--line); font-size: 1rem; color: var(--muted); }
+    .code-card pre { padding: 18px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; color: #dbeafe; font-size: 0.92rem; }
+
+    .docs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .doc-link { padding: 18px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+    .doc-link strong { display: block; color: var(--text); margin-bottom: 6px; }
+    .doc-link:hover { background: var(--panel-strong); }
+
+    .cta { text-align: center; padding: 72px 0 88px; }
+    .cta-box { border: 1px solid var(--line); background: linear-gradient(135deg, rgba(125, 211, 252, 0.12), rgba(167, 139, 250, 0.12)); border-radius: 28px; padding: 42px 24px; box-shadow: var(--shadow); }
+    .cta h2 { margin: 0 0 12px; font-size: clamp(2rem, 5vw, 4rem); letter-spacing: -0.06em; line-height: 1; }
+    .cta p { margin: 0 auto 26px; color: var(--muted); max-width: 620px; }
+
+    footer { border-top: 1px solid var(--line); color: var(--muted); padding: 28px 0; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .install-grid { grid-template-columns: 1fr; }
+      .feature-grid, .screenshots, .docs-grid { grid-template-columns: 1fr 1fr; }
+      .nav-links { display: none; }
+    }
+
+    @media (max-width: 580px) {
+      .feature-grid, .screenshots, .docs-grid, .stats { grid-template-columns: 1fr; }
+      .hero { padding-top: 56px; }
+      .terminal-body { font-size: 0.82rem; padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="container" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="ShellDeck home">
+        <span class="brand-mark">$</span>
+        <span>ShellDeck</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#install">Install</a>
+        <a href="#docs">Docs</a>
+        <a href="https://github.com/adrienclaire/ShellDeck">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">Fresh VM → ready shell in minutes</span>
+          <h1>Stop rebuilding your terminal by hand.</h1>
+          <p class="lead">ShellDeck is a cross-platform shell bootstrap for Windows, Linux and macOS. It installs your command-line toolkit, configures PowerShell, Bash or Zsh, manages SSH workflows, and can turn a machine into a lightweight homelab control node.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#install">Install ShellDeck</a>
+            <a class="button" href="https://github.com/adrienclaire/ShellDeck">View on GitHub</a>
+          </div>
+          <div class="stats" aria-label="Project highlights">
+            <div class="stat"><strong>3</strong><span>operating systems</span></div>
+            <div class="stat"><strong>3</strong><span>shells supported</span></div>
+            <div class="stat"><strong>2</strong><span>machine profiles</span></div>
+          </div>
+        </div>
+
+        <div class="terminal-card" aria-label="ShellDeck terminal preview">
+          <div class="terminal-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="terminal-body">
+            <pre><span class="muted">fresh-vm</span> <span class="cmd">$</span> bash install.sh
+<span class="ok">✔</span> Detecting OS
+<span class="ok">✔</span> Installing CLI tools
+<span class="ok">✔</span> Configuring Bash profile
+<span class="ok">✔</span> Adding SSH host shortcuts
+
+<span class="cmd">ShellDeck ENV READY</span>
+User      adrien
+Host      control-node
+Profile   Control node
+SSH       5 hosts configured
+Tools     git fzf bat eza zoxide starship
+Status    all good</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="container">
+        <h2 class="section-title">Built for people who constantly rebuild machines.</h2>
+        <p class="section-subtitle">Dotfiles are useful, but they do not install dependencies, configure SSH, choose a machine profile, or prepare an infra dashboard. ShellDeck packages the whole setup flow into one installer.</p>
+        <div class="feature-grid">
+          <article class="card">
+            <h3>Cross-platform bootstrap</h3>
+            <p>Prepare Windows, Linux and macOS environments with one project and profile-aware installers.</p>
+          </article>
+          <article class="card">
+            <h3>PowerShell, Bash and Zsh</h3>
+            <p>Hook a shared runtime into your shell profile while keeping each platform native.</p>
+          </article>
+          <article class="card">
+            <h3>Modern CLI toolkit</h3>
+            <p>Install and check common tools like fzf, bat, eza, zoxide, starship, ripgrep, jq, gh and more.</p>
+          </article>
+          <article class="card">
+            <h3>SSH host workflow</h3>
+            <p>Add hosts, store shortcuts, launch connections, and manage a small infra inventory.</p>
+          </article>
+          <article class="card">
+            <h3>Homelab control node</h3>
+            <p>Optionally enable an infra dashboard for Proxmox, Docker VMs, NAS devices and app servers.</p>
+          </article>
+          <article class="card">
+            <h3>Safer updates</h3>
+            <p>Refresh ShellDeck while preserving aliases, custom functions, SSH config, hosts and profile data.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="container">
+        <h2 class="section-title">Screenshots</h2>
+        <p class="section-subtitle">Use these as the visual proof before posting to Hacker News. Replace or supplement them with a 20–30 second GIF when the demo recording is ready.</p>
+        <div class="screenshots">
+          <figure class="shot">
+            <img src="screenshots/shelldeck-installer-profile.png" alt="ShellDeck installer profile selection">
+            <figcaption>Interactive installer profile selection.</figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="screenshots/shelldeck-workstation-hardening.png" alt="ShellDeck workstation SSH hardening flow">
+            <figcaption>Workstation SSH and hardening flow.</figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="screenshots/shelldeck-infra-dashboard.png" alt="ShellDeck infra dashboard">
+            <figcaption>Infra dashboard for SSH hosts and services.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="container">
+        <h2 class="section-title">One-command install</h2>
+        <p class="section-subtitle">Tagged install URLs are recommended for production. Use the latest release tag when you want a reproducible setup.</p>
+        <div class="install-grid">
+          <div class="code-card">
+            <h3>Windows PowerShell</h3>
+            <pre><code>irm https://raw.githubusercontent.com/adrienclaire/ShellDeck/v0.2.3/install.ps1 -OutFile install.ps1
+.\install.ps1</code></pre>
+          </div>
+          <div class="code-card">
+            <h3>Linux / macOS</h3>
+            <pre><code>curl -fsSLO https://raw.githubusercontent.com/adrienclaire/ShellDeck/v0.2.3/install.sh
+bash install.sh</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="docs">
+      <div class="container">
+        <h2 class="section-title">Documentation links</h2>
+        <p class="section-subtitle">Start with the README, then follow the project docs and examples as the documentation grows.</p>
+        <div class="docs-grid">
+          <a class="doc-link" href="https://github.com/adrienclaire/ShellDeck#one-command-install"><strong>Install</strong>Windows, Linux and macOS setup commands.</a>
+          <a class="doc-link" href="https://github.com/adrienclaire/ShellDeck#main-commands"><strong>Commands</strong>Control node and shell helper commands.</a>
+          <a class="doc-link" href="https://github.com/adrienclaire/ShellDeck#linux-security-setup"><strong>Security</strong>UFW, fail2ban, SSH and MFA setup notes.</a>
+          <a class="doc-link" href="https://github.com/adrienclaire/ShellDeck#infra-config"><strong>Infra config</strong>Hosts, SSH shortcuts and service checks.</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Make every fresh machine feel familiar.</h2>
+          <p>Try ShellDeck, open an issue with feedback, or fork it to adapt the bootstrap flow to your own terminal workflow.</p>
+          <div class="hero-actions" style="justify-content:center">
+            <a class="button primary" href="https://github.com/adrienclaire/ShellDeck">Open GitHub repo</a>
+            <a class="button" href="#install">Copy install command</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">ShellDeck is open source. Built for fresh VMs, workstations and homelab control nodes.</div>
+  </footer>
+</body>
+</html>
